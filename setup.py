@@ -80,6 +80,7 @@ setuptools.setup(
     ],
     license=about.get("__license__", "unknown"),
     package_dir={"": "src"},
+    package_data={"": ["*.txt"]},
     extras_require=extras,
     install_requires=required_packages,
     long_description_content_type="text/markdown",
