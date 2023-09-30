@@ -265,7 +265,7 @@ class SdDreamboothModel(BaseModel):
                 "--prior_loss_weight",
                 "1.0",
                 "--class_prompt",
-                class_prompt,
+                f"'{class_prompt}'",
             ]
 
             if self.reduce_gpu_memory_usage:
@@ -458,7 +458,7 @@ class SdxlDreamboothLoraModel(BaseModel):
                 "--prior_loss_weight",
                 "1.0",
                 "--class_prompt",
-                class_prompt,
+                f"'{class_prompt}'",
             ]
 
             if self.reduce_gpu_memory_usage:

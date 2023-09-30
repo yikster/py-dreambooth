@@ -31,7 +31,8 @@ import sys
 import tarfile
 from typing import Any, List, Optional, Union
 
-try:
+requirements_file_path = "/opt/ml/processing/config/requirements.txt"
+if os.path.exists(requirements_file_path):
     subprocess.check_call(
         [
             sys.executable,
@@ -39,11 +40,9 @@ try:
             "pip",
             "install",
             "-r",
-            "/opt/ml/processing/config/requirements.txt",
+            requirements_file_path,
         ]
     )
-except subprocess.CalledProcessError:
-    pass
 
 import numpy as np
 import torch

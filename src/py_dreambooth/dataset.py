@@ -30,11 +30,10 @@ class LocalDataset:
         self.resolution = None
         self.logger = logger
 
-    def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
-        if os.path.exists(self.raw_data_dir):
-            shutil.rmtree(self.raw_data_dir)
+        os.makedirs(self.raw_data_dir, exist_ok=True)
 
-        os.makedirs(self.raw_data_dir)
+    def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
+        shutil.rmtree(self.raw_data_dir)
 
         if repo_id is None:
             repo_id = HfRepoId.DOG_EXAMPLE
