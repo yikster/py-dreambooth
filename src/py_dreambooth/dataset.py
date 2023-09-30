@@ -1,0 +1,143 @@
+import logging
+import os
+import shutil
+from typing import Final, Optional
+import boto3
+from huggingface_hub import snapshot_download
+from tqdm import tqdm
+from .utils.aws_helpers import (
+    create_bucket_if_not_exists,
+    delete_files_in_s3,
+    upload_dir_to_s3,
+)
+from .utils.image_helpers import (
+    detect_face_and_resize_image,
+    get_image_paths,
+    resize_and_center_crop_image,
+    validate_dir,
+)
+from .utils.misc import log_or_print
+
+
+class HfRepoId:
+    DOG_EXAMPLE: Final = "diffusers/dog-example"
+
+
+class LocalDataset:
+    def __init__(self, data_dir: str, logger: Optional[logging.Logger] = None) -> None:
+        self.raw_data_dir = data_dir
+        self.preproc_data_dir = data_dir
+        self.resolution = None
+        self.logger = logger
+
+    def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
+        if os.path.exists(self.raw_data_dir):
+            shutil.rmtree(self.raw_data_dir)
+
+        os.makedirs(self.raw_data_dir)
+
+        if repo_id is None:
+            repo_id = HfRepoId.DOG_EXAMPLE
+
+        snapshot_download(
+            repo_id,
+            local_dir=self.raw_data_dir,
+            repo_type="dataset",
+            ignore_patterns=".gitattributes",
+        )
+
+        msg = f"The dataset '{repo_id}' has been downloaded from the HuggingFace Hub to '{self.raw_data_dir}'."
+        log_or_print(msg, self.logger)
+
+        return self
+
+    def preprocess_images(
+        self, resolution: int = 1024, detect_face: bool = False
+    ) -> "LocalDataset":
+        validate_dir(self.raw_data_dir)
+
+        self.resolution = resolution
+        self.preproc_data_dir = "_".join([self.raw_data_dir, "preproc"])
+
+        if os.path.exists(self.preproc_data_dir):
+            shutil.rmtree(self.preproc_data_dir)
+
+        os.makedirs(self.preproc_data_dir)
+
+        preprocess_func = (
+            detect_face_and_resize_image
+            if detect_face
+            else resize_and_center_crop_image
+        )
+
+        raw_image_paths = get_image_paths(self.raw_data_dir)
+        msg = f"A total of {len(raw_image_paths)} images were found."
+        log_or_print(msg, self.logger)
+
+        for image_path in tqdm(raw_image_paths):
+            try:
+                preproc_image = preprocess_func(
+                    image_path, self.resolution, self.resolution
+                )
+                preproc_image.save(
+                    os.path.join(
+                        self.preproc_data_dir, image_path.split(os.path.sep)[-1]
+                    )
+                )
+
+            except RuntimeError as error:
+                log_or_print(str(error), self.logger)
+                continue
+
+        num_preproc_images = len(get_image_paths(self.preproc_data_dir))
+        if num_preproc_images == 0:
+            raise RuntimeError("No faces were found in any of the images.")
+
+        msg = f"A total of {num_preproc_images} images were preprocessed and stored in the path '{self.preproc_data_dir}'."
+        log_or_print(msg, self.logger)
+
+        return self
+
+
+class AWSDataset(LocalDataset):
+    def __init__(
+        self,
+        data_dir: str,
+        boto_session: boto3.Session,
+        project_name: Optional[str] = None,
+        s3_bucket_name: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
+    ) -> None:
+        super().__init__(data_dir, logger)
+
+        self.boto_session = boto_session
+        self.project_name = "py-dreambooth" if project_name is None else project_name
+        self.dataset_prefix = f"{self.project_name}/dataset"
+
+        self.bucket_name = (
+            create_bucket_if_not_exists(
+                self.boto_session, self.boto_session.region_name, logger=self.logger
+            )
+            if s3_bucket_name is None
+            else s3_bucket_name
+        )
+
+    def upload_images(self) -> "AWSDataset":
+        delete_files_in_s3(
+            self.boto_session,
+            self.bucket_name,
+            self.dataset_prefix,
+            logger=self.logger,
+        )
+
+        validate_dir(self.preproc_data_dir)
+
+        upload_dir_to_s3(
+            self.boto_session,
+            self.preproc_data_dir,
+            self.bucket_name,
+            self.dataset_prefix,
+            logger=self.logger,
+        )
+
+        return self
