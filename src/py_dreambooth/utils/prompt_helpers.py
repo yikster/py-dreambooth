@@ -6,7 +6,7 @@ def make_prompt(subject_name: str, class_name: str) -> str:
         "A hyper-realistic and stunning depiction of {subject_name} {class_name}, capturing the person's charisma and charm, trending on Behance, intricate textures, vivid color palette, reminiscent of Alex Ross and Norman Rockwell",
         "A portrait of {subject_name} {class_name}, pen and ink, intricate line drawings, by Craig Mullins, Ruan Jia, Kentaro Miura, Greg Rutkowski, Loundraw",
         "A drawing of {subject_name} {class_name}, in the style of mark lague, hyper-realistic portraits, Sam Spratt, Brent Heighton, captivating gaze, cyclorama, crisp and clean --ar 69:128 --s 750 --v 5. 2",
-        "A painting of {subject_name} {class_name}, in the style of Yuumei, dark orange and gray, depictions of inclement weather, detailed character design, Frank Miller, angular, Eddie Jones --ar 69:128 --s 750 --v 5. 2",
+        "A painting of {subject_name} {class_name}, in the style of Yuumei, dark orange and gray, depictions of inclement weather, detailed character design, Frank Miller, Angular, Eddie Jones --ar 69:128 --s 750 --v 5. 2",
         "A digital painting of {subject_name} {class_name}, a digital painting, magenta and gray, high contrast illustration, Ryan Hewett, Otto Schmidt",
     ]
     random.shuffle(prompt_list)

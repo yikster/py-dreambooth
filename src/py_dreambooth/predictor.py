@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Final, List, Optional
+from typing import Final, List, Optional
 import boto3
 import sagemaker
 import torch
@@ -15,16 +15,6 @@ DEFAULT_INSTANCE_TYPE: Final = "ml.g4dn.xlarge"
 
 PYTORCH_VERSION: Final = "2.0.0"
 TRANSFORMER_VERSION: Final = "4.28.1"
-
-
-def validate_prompt(prompt: str, model: Any) -> bool:
-    return (
-        hasattr(model, "subject_name")
-        and hasattr(model, "class_name")
-        and not (
-            model.subject_name in prompt.lower() and model.class_name in prompt.lower()
-        )
-    )
 
 
 class BasePredictor(metaclass=ABCMeta):
@@ -47,6 +37,16 @@ class BasePredictor(metaclass=ABCMeta):
         """
         TODO
         """
+
+    def validate_prompt(self, prompt: str) -> bool:
+        return (
+            hasattr(self.model, "subject_name")
+            and hasattr(self.model, "class_name")
+            and not (
+                self.model.subject_name in prompt.lower()
+                and self.model.class_name in prompt.lower()
+            )
+        )
 
 
 class LocalPredictor(BasePredictor):
@@ -76,7 +76,7 @@ class LocalPredictor(BasePredictor):
         high_noise_frac: float = 0.7,
         cross_attention_scale: float = 0.5,
     ) -> List[Image.Image]:
-        if validate_prompt(prompt, self.model):
+        if self.validate_prompt(prompt):
             log_or_print(
                 "Warning: the subject and class names are not included in the prompt.",
                 self.logger,
@@ -186,6 +186,7 @@ class AWSPredictor(BasePredictor):
             initial_instance_count=1,
             instance_type=infer_instance_type,
             endpoint_name=self.endpoint_name,
+            volume_size=50,
         )
 
         log_or_print(
@@ -212,7 +213,7 @@ class AWSPredictor(BasePredictor):
         high_noise_frac: float = 0.7,
         cross_attention_scale: float = 1.0,
     ) -> List[Image.Image]:
-        if validate_prompt(prompt, self.model):
+        if self.validate_prompt(prompt):
             log_or_print(
                 "Warning: the subject and class names are not included in the prompt.",
                 self.logger,

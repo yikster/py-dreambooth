@@ -20,10 +20,21 @@ from .utils.misc import log_or_print
 
 
 class HfRepoId:
+    """
+    A class that represents HuggingFace Hub repository IDs.
+    """
+
     DOG_EXAMPLE: Final = "diffusers/dog-example"
 
 
 class LocalDataset:
+    """
+    A class that represents a local dataset.
+
+    data_dir: The name of the directory containing the images you want the model to train on
+    logger: The logger to use for logging messages
+    """
+
     def __init__(self, data_dir: str, logger: Optional[logging.Logger] = None) -> None:
         self.raw_data_dir = data_dir
         self.preproc_data_dir = data_dir
@@ -33,6 +44,7 @@ class LocalDataset:
         os.makedirs(self.raw_data_dir, exist_ok=True)
 
     def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
+        """ """
         shutil.rmtree(self.raw_data_dir)
 
         if repo_id is None:
@@ -90,7 +102,7 @@ class LocalDataset:
 
         num_preproc_images = len(get_image_paths(self.preproc_data_dir))
         if num_preproc_images == 0:
-            raise RuntimeError("No faces were found in any of the images.")
+            raise RuntimeError("There are no preprocessed images.")
 
         msg = f"A total of {num_preproc_images} images were preprocessed and stored in the path '{self.preproc_data_dir}'."
         log_or_print(msg, self.logger)
@@ -99,6 +111,8 @@ class LocalDataset:
 
 
 class AWSDataset(LocalDataset):
+    """ """
+
     def __init__(
         self,
         data_dir: str,

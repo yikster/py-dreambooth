@@ -49,10 +49,6 @@ class SchedulerConfig:
     }
 
 
-def get_abs_path(*args) -> str:
-    return os.path.join(os.path.dirname(__file__), *args)
-
-
 class BaseModel(metaclass=ABCMeta):
     def __init__(
         self,
@@ -94,6 +90,10 @@ class BaseModel(metaclass=ABCMeta):
         self.train_code_path = None
         self.infer_source_dir = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    @staticmethod
+    def get_abs_path(*args) -> str:
+        return os.path.join(os.path.dirname(__file__), *args)
 
     @abstractmethod
     def get_arguments(self) -> List[str]:
@@ -178,12 +178,12 @@ class SdDreamboothModel(BaseModel):
             enable_xformers_memory_efficient_attention
         )
 
-        self.train_code_path = get_abs_path(
+        self.train_code_path = self.get_abs_path(
             "scripts",
             "train",
             CodeFilename.SD_DREAMBOOTH,
         )
-        self.infer_source_dir = get_abs_path(
+        self.infer_source_dir = self.get_abs_path(
             "scripts", "infer", SourceDir.SD_DREAMBOOTH
         )
 
@@ -362,12 +362,12 @@ class SdxlDreamboothLoraModel(BaseModel):
         self.reduce_gpu_memory_usage = reduce_gpu_memory_usage
         self.use_refiner = use_refiner
 
-        self.train_code_path = get_abs_path(
+        self.train_code_path = self.get_abs_path(
             "scripts",
             "train",
             CodeFilename.SDXL_DREAMBOOTH_LORA,
         )
-        self.infer_source_dir = get_abs_path(
+        self.infer_source_dir = self.get_abs_path(
             "scripts",
             "infer",
             SourceDir.SDXL_DREAMBOOTH_LORA,
@@ -439,6 +439,8 @@ class SdxlDreamboothLoraModel(BaseModel):
             self.resolution,
             "--train_batch_size",
             self.train_batch_size,
+            "--sample_batch_size",
+            2,
             "--learning_rate",
             self.learning_rate,
             "--lr_scheduler",
