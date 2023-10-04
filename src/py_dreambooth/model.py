@@ -442,8 +442,8 @@ class SdxlDreamboothLoraModel(BaseModel):
         arguments = [
             "--pretrained_model_name_or_path",
             self.pretrained_model_name_or_path,
-            "--pretrained_vae_model_name_or_path",
-            self.pretrained_vae_model_name_or_path,
+            # "--pretrained_vae_model_name_or_path",
+            # self.pretrained_vae_model_name_or_path,
             "--instance_data_dir",
             self.data_dir,
             "--instance_prompt",
