@@ -284,26 +284,6 @@ class SdDreamboothModel(BaseModel):
                 f"'{class_prompt}'",
             ]
 
-            if self.reduce_gpu_memory_usage:
-                arguments += ["--gradient_accumulation_steps", "1"]
-
-            if self.train_text_encoder:
-                arguments += ["--train_text_encoder", "True"]
-
-                if self.reduce_gpu_memory_usage:
-                    arguments += [
-                        "--gradient_checkpointing",
-                        "True",
-                        "--use_8bit_adam",
-                        "True",
-                        "--enable_xformers_memory_efficient_attention",
-                        "True",
-                        "--mixed_precision",
-                        "fp16",
-                        "--set_grads_to_none",
-                        "True",
-                    ]
-
         if self.seed:
             arguments += [
                 "--seed",
@@ -313,10 +293,29 @@ class SdDreamboothModel(BaseModel):
         if self.center_crop:
             arguments += ["--center_crop"]
 
+        if self.train_text_encoder:
+            arguments += ["--train_text_encoder", "True"]
+
         if self.max_train_steps:
             arguments += [
                 "--max_train_steps",
                 self.max_train_steps,
+            ]
+
+        if self.reduce_gpu_memory_usage:
+            arguments += [
+                "--gradient_accumulation_steps",
+                "1",
+                "--gradient_checkpointing",
+                "True",
+                "--use_8bit_adam",
+                "True",
+                "--enable_xformers_memory_efficient_attention",
+                "True",
+                "--mixed_precision",
+                "fp16",
+                "--set_grads_to_none",
+                "True",
             ]
 
         if self.report_to:
@@ -369,8 +368,7 @@ class SdxlDreamboothLoraModel(BaseModel):
             compress_output,
         )
 
-        # self.pretrained_vae_model_name_or_path = HfModel.SDXL_VAE
-        self.pretrained_vae_model_name_or_path = None
+        self.pretrained_vae_model_name_or_path = HfModel.SDXL_VAE
         self.subject_name = subject_name
         self.class_name = class_name
         self.with_prior_preservation = with_prior_preservation
@@ -442,8 +440,8 @@ class SdxlDreamboothLoraModel(BaseModel):
         arguments = [
             "--pretrained_model_name_or_path",
             self.pretrained_model_name_or_path,
-            # "--pretrained_vae_model_name_or_path",
-            # self.pretrained_vae_model_name_or_path,
+            "--pretrained_vae_model_name_or_path",
+            self.pretrained_vae_model_name_or_path,
             "--instance_data_dir",
             self.data_dir,
             "--instance_prompt",
@@ -480,24 +478,6 @@ class SdxlDreamboothLoraModel(BaseModel):
                 f"'{class_prompt}'",
             ]
 
-            if self.reduce_gpu_memory_usage:
-                arguments += ["--gradient_accumulation_steps", "4"]
-
-            if self.train_text_encoder:
-                arguments += ["--train_text_encoder", "True"]
-
-                if self.reduce_gpu_memory_usage:
-                    arguments += [
-                        "--gradient_checkpointing",
-                        "True",
-                        "--use_8bit_adam",
-                        "True",
-                        "--enable_xformers_memory_efficient_attention",
-                        "True",
-                        "--mixed_precision",
-                        "fp16",
-                    ]
-
         if self.seed:
             arguments += [
                 "--seed",
@@ -507,10 +487,27 @@ class SdxlDreamboothLoraModel(BaseModel):
         if self.center_crop:
             arguments += ["--center_crop"]
 
+        if self.train_text_encoder:
+            arguments += ["--train_text_encoder", "True"]
+
         if self.max_train_steps:
             arguments += [
                 "--max_train_steps",
                 self.max_train_steps,
+            ]
+
+        if self.reduce_gpu_memory_usage:
+            arguments += [
+                "--gradient_accumulation_steps",
+                "4",
+                "--gradient_checkpointing",
+                "True",
+                "--use_8bit_adam",
+                "True",
+                "--enable_xformers_memory_efficient_attention",
+                "True",
+                "--mixed_precision",
+                "fp16",
             ]
 
         if self.report_to:
