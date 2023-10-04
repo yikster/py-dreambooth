@@ -21,7 +21,7 @@ from .utils.misc import log_or_print
 
 class HfRepoId:
     """
-    A class that represents HuggingFace Hub repository IDs.
+    A class to store HuggingFace Hub repository IDs.
     """
 
     DOG_EXAMPLE: Final = "diffusers/dog-example"
@@ -29,10 +29,11 @@ class HfRepoId:
 
 class LocalDataset:
     """
-    A class that represents a local dataset.
-
-    data_dir: The name of the directory containing the images you want the model to train on
-    logger: The logger to use for logging messages
+    A class that represents a local dataset
+    Args:
+        data_dir: The name of the local directory containing the images
+            you want the model to train on
+        logger: The logger to use for logging messages
     """
 
     def __init__(self, data_dir: str, logger: Optional[logging.Logger] = None) -> None:
@@ -44,7 +45,14 @@ class LocalDataset:
         os.makedirs(self.raw_data_dir, exist_ok=True)
 
     def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
-        """ """
+        """
+        Download a dataset from the HuggingFace Hub to the local directory
+        Args:
+            repo_id: The ID of the HuggingFace Hub repository to download
+            logger: The logger to use for logging messages
+        Returns:
+            The LocalDataset instance
+        """
         shutil.rmtree(self.raw_data_dir)
 
         if repo_id is None:
@@ -65,6 +73,15 @@ class LocalDataset:
     def preprocess_images(
         self, resolution: int = 1024, detect_face: bool = False
     ) -> "LocalDataset":
+        """
+        Preprocess (crop and resize) images in a local directory
+        Args:
+            resolution: The resolution to resize the images to
+            detect_face: Whether to detect faces and crop around them. If not, crop by center
+            logger: The logger to use for logging messages
+        Returns:
+            The LocalDataset instance
+        """
         validate_dir(self.raw_data_dir)
 
         self.resolution = resolution
@@ -111,7 +128,17 @@ class LocalDataset:
 
 
 class AWSDataset(LocalDataset):
-    """ """
+    """
+    A class that represents an AWS dataset
+    Args:
+        data_dir: The name of the local directory containing the images
+            you want the model to train on
+        boto_session: The Boto session to use for AWS interactions
+        project_name: The name of the project,
+            which will be used for task names, save locations, etc.
+        s3_bucket_name: The name of the S3 bucket to use for the dataset
+        logger: The logger to use for logging messages
+    """
 
     def __init__(
         self,
@@ -136,6 +163,11 @@ class AWSDataset(LocalDataset):
         )
 
     def upload_images(self) -> "AWSDataset":
+        """
+        Upload images to the S3 bucket
+        Returns:
+            The AWSDataset instance
+        """
         delete_files_in_s3(
             self.boto_session,
             self.bucket_name,

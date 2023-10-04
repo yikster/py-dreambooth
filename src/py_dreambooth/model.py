@@ -12,6 +12,10 @@ from diffusers.models import AutoencoderKL
 
 
 class HfModel:
+    """
+    A class to store HuggingFace Hub model IDs
+    """
+
     SD_V1_4: Final = "CompVis/stable-diffusion-v1-4"
     SD_V1_5: Final = "runwayml/stable-diffusion-v1-5"
     SD_V2_1: Final = "stabilityai/stable-diffusion-2-1-base"
@@ -22,16 +26,28 @@ class HfModel:
 
 
 class CodeFilename:
+    """
+    A class to store script file names that will be used for training
+    """
+
     SD_DREAMBOOTH: Final = "train_sd_dreambooth.py"
     SDXL_DREAMBOOTH_LORA: Final = "train_sdxl_dreambooth_lora.py"
 
 
 class SourceDir:
+    """
+    A class to store source directory names that will be used to SageMaker Endpoint
+    """
+
     SD_DREAMBOOTH: Final = "sd_dreambooth"
     SDXL_DREAMBOOTH_LORA: Final = "sdxl_dreambooth_lora"
 
 
 class SchedulerConfig:
+    """
+    A class to store scheduler configuration values for inference
+    """
+
     DDIM: Final = {
         "beta_start": 0.00085,
         "beta_end": 0.012,
@@ -353,7 +369,8 @@ class SdxlDreamboothLoraModel(BaseModel):
             compress_output,
         )
 
-        self.pretrained_vae_model_name_or_path = HfModel.SDXL_VAE
+        # self.pretrained_vae_model_name_or_path = HfModel.SDXL_VAE
+        self.pretrained_vae_model_name_or_path = None
         self.subject_name = subject_name
         self.class_name = class_name
         self.with_prior_preservation = with_prior_preservation
