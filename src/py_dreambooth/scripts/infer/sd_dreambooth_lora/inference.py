@@ -14,6 +14,7 @@ class HfModel(str, Enum):
     A class that holds the HuggingFace Hub model IDs
     """
 
+    SD_V2_1 = "stabilityai/stable-diffusion-2-1-base"
     SD_VAE = "stabilityai/sd-vae-ft-mse"
 
 
@@ -60,12 +61,16 @@ def model_fn(model_dir: str) -> Any:
         scheduler = None
         ValueError("The 'scheduler_type' must be one of 'DDIM' or 'EulerDiscrete'.")
 
+    pretrained_model_name_or_path = os.environ.get(
+        "PRETRAINED_MODEL_NAME_OR_PATH", HfModel.SD_V2_1.value
+    )
     pipeline = StableDiffusionPipeline.from_pretrained(
-        model_dir,
+        pretrained_model_name_or_path,
         scheduler=scheduler,
         revision="fp16",
         torch_dtype=torch.float16,
     ).to(device)
+    pipeline.load_lora_weights(model_dir)
 
     if ast.literal_eval(os.environ.get("USE_FT_VAE", "False")):
         pipeline.vae = AutoencoderKL.from_pretrained(
@@ -99,6 +104,7 @@ def predict_fn(
     negative_prompt = data.pop("negative_prompt", None)
     num_images_per_prompt = data.pop("num_images_per_prompt", 4)
     seed = data.pop("seed", None)
+    cross_attention_scale = data.pop("cross_attention_scale", 1.0)
 
     pipeline = model_components["pipeline"]
 
@@ -121,6 +127,7 @@ def predict_fn(
         negative_prompt=negative_prompt,
         num_images_per_prompt=num_images_per_prompt,
         generator=generator,
+        cross_attention_kwargs={"scale": cross_attention_scale},
     )["images"]
 
     encoded_images = []

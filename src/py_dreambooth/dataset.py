@@ -1,7 +1,8 @@
 import logging
 import os
 import shutil
-from typing import Final, Optional
+from enum import Enum
+from typing import Optional
 import boto3
 from huggingface_hub import snapshot_download
 from tqdm import tqdm
@@ -19,12 +20,12 @@ from .utils.image_helpers import (
 from .utils.misc import log_or_print
 
 
-class HfRepoId:
+class HfRepoId(str, Enum):
     """
-    A class to store HuggingFace Hub repository IDs.
+    A class that holds the HuggingFace Hub repository ID
     """
 
-    DOG_EXAMPLE: Final = "diffusers/dog-example"
+    DOG_EXAMPLE = "diffusers/dog-example"
 
 
 class LocalDataset:
@@ -49,14 +50,13 @@ class LocalDataset:
         Download a dataset from the HuggingFace Hub to the local directory
         Args:
             repo_id: The ID of the HuggingFace Hub repository to download
-            logger: The logger to use for logging messages
         Returns:
-            The LocalDataset instance
+            The local dataset instance
         """
         shutil.rmtree(self.raw_data_dir)
 
         if repo_id is None:
-            repo_id = HfRepoId.DOG_EXAMPLE
+            repo_id = HfRepoId.DOG_EXAMPLE.value
 
         snapshot_download(
             repo_id,
@@ -78,9 +78,8 @@ class LocalDataset:
         Args:
             resolution: The resolution to resize the images to
             detect_face: Whether to detect faces and crop around them. If not, crop by center
-            logger: The logger to use for logging messages
         Returns:
-            The LocalDataset instance
+            The local dataset instance
         """
         validate_dir(self.raw_data_dir)
 
@@ -166,7 +165,7 @@ class AWSDataset(LocalDataset):
         """
         Upload images to the S3 bucket
         Returns:
-            The AWSDataset instance
+            The AWS dataset instance
         """
         delete_files_in_s3(
             self.boto_session,

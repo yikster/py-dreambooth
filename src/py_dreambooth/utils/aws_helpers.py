@@ -11,6 +11,15 @@ def create_bucket_if_not_exists(
     region_name: str,
     logger: Optional[logging.Logger] = None,
 ) -> str:
+    """
+    Create a S3 bucket if it does not exist
+    Args:
+        boto_session: The boto session to use for AWS interactions
+        region_name: AWS region name
+        logger: The logger to use for logging messages
+    Returns:
+        The name of the S3 bucket created
+    """
     s3_client = boto_session.client("s3")
     sts_client = boto_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
@@ -36,6 +45,15 @@ def create_role_if_not_exists(
     region_name: str,
     logger: Optional[logging.Logger] = None,
 ) -> str:
+    """
+    Create an IAM role if it does not exist
+    Args:
+        boto_session: The boto session to use for AWS interactions
+        region_name: AWS region name
+        logger: The logger to use for logging messages
+    Returns:
+        The name of the IAM role created
+    """
     iam_client = boto_session.client("iam")
 
     role_name = f"AmazonSageMaker-ExecutionRole-{region_name}"
@@ -74,6 +92,14 @@ def delete_files_in_s3(
     prefix: str,
     logger: Optional[logging.Logger] = None,
 ) -> None:
+    """
+    Delete files in a S3 bucket
+    Args:
+        boto_session: The boto session to use for AWS interactions
+        bucket_name: The name of the S3 bucket
+        prefix: The S3 prefix of the files to delete
+        logger: The logger to use for logging messages
+    """
     s3_resource = boto_session.resource("s3")
     bucket = s3_resource.Bucket(bucket_name)
 
@@ -84,6 +110,15 @@ def delete_files_in_s3(
 
 
 def make_s3_uri(bucket: str, prefix: str, filename: Optional[str] = None) -> str:
+    """
+    Make a S3 URI
+    Args:
+        bucket: The S3 bucket name
+        prefix: The S3 prefix
+        filename: The filename
+    Returns:
+        The S3 URI
+    """
     prefix = prefix if filename is None else os.path.join(prefix, filename)
     return f"s3://{bucket}/{prefix}"
 
@@ -97,6 +132,17 @@ def upload_dir_to_s3(
     public_readable: bool = False,
     logger: Optional[logging.Logger] = None,
 ) -> None:
+    """
+    Upload a directory to a S3 bucket
+    Args:
+        boto_session: The boto session to use for AWS interactions
+        local_dir: The local directory to upload
+        bucket_name: The name of the S3 bucket
+        prefix: The S3 prefix
+        file_ext_to_excl: The file extensions to exclude from the upload
+        public_readable: Whether the files should be public readable
+        logger: The logger to use for logging messages
+    """
     s3_client = boto_session.client("s3")
     file_ext_to_excl = [] if file_ext_to_excl is None else file_ext_to_excl
     extra_args = {"ACL": "public-read"} if public_readable else {}

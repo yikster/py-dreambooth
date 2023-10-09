@@ -10,7 +10,7 @@ from sagemaker.processing import ProcessingInput, ProcessingOutput
 from sagemaker.utils import unique_name_from_base
 from .dataset import AWSDataset, LocalDataset
 from .model import BaseModel
-from .predictor import AWSPredictor, LocalPredictor
+from .predictor import AWSPredictor, BasePredictor, LocalPredictor
 from .utils.aws_helpers import create_role_if_not_exists, make_s3_uri
 from .utils.misc import decompress_file, log_or_print
 
@@ -23,6 +23,15 @@ BASE_DIR: Final = "/opt/ml/processing"
 
 
 class BaseTrainer(metaclass=ABCMeta):
+    """
+    An abstract class to represent the trainer
+    Args:
+        config_path: The path to the Accelerate config file
+        report_to: The solution to report results and log
+        wandb_api_key: The API key to use for logging to WandB
+        logger: The logger to use for logging messages
+    """
+
     def __init__(
         self,
         config_path: Optional[str],
@@ -36,13 +45,28 @@ class BaseTrainer(metaclass=ABCMeta):
         self.logger = logger
 
     @abstractmethod
-    def fit(self, model: BaseModel, dataset: LocalDataset):
+    def fit(self, model: BaseModel, dataset: LocalDataset) -> BasePredictor:
         """
-        TODO
+        Fit a model to a dataset
+        Args:
+            model: The base model instance to be fitted
+            dataset: The local dataset instance to fit the model
+        Returns:
+            The base predictor instance of the fitted model
         """
 
 
 class LocalTrainer(BaseTrainer):
+    """
+    A class to represent the local trainer
+    Args:
+        config_path: The path to the Accelerate config file
+        output_dir: The directory to store the model
+        report_to: The solution to report results and log
+        wandb_api_key: The API key to use for logging to WandB
+        logger: The logger to use for logging messages
+    """
+
     def __init__(
         self,
         config_path: Optional[str] = None,
@@ -57,6 +81,14 @@ class LocalTrainer(BaseTrainer):
         os.makedirs(os.path.join(os.getcwd(), self.output_dir), exist_ok=True)
 
     def fit(self, model: BaseModel, dataset: LocalDataset) -> LocalPredictor:
+        """
+        Fit a model to a dataset
+        Args:
+            model: The base model instance to be fitted
+            dataset: The local dataset instance to fit the model
+        Returns:
+            The local predictor instance of the fitted model
+        """
         model = model.set_members(
             **{
                 "data_dir": dataset.preproc_data_dir,
@@ -126,6 +158,14 @@ class AWSTrainer(BaseTrainer):
     def fit(
         self, model: BaseModel, dataset: AWSDataset
     ) -> Union[AWSPredictor, LocalPredictor]:
+        """
+        Fit a model to a dataset
+        Args:
+            model: The base model instance to be fitted
+            dataset: The AWS dataset instance to fit the model
+        Returns:
+            The AWS or local predictor instance of the fitted model
+        """
         self.sm_session = sagemaker.session.Session(boto_session=dataset.boto_session)
 
         self.role_name = (

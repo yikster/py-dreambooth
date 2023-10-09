@@ -12,6 +12,14 @@ def compress_dir_to_model_tar_gz(
     tgt_filename: Optional[str] = None,
     logger: Optional[logging.Logger] = None,
 ) -> None:
+    """
+    Compresses a directory to a tar.gz file
+    Args:
+        src_dir: source directory to compress
+        tgt_dir: target directory to compress
+        tgt_filename: target filename to compress
+        logger: logger to log messages
+    """
     if tgt_dir is None:
         tgt_dir = src_dir
 
@@ -37,9 +45,15 @@ def compress_dir_to_model_tar_gz(
 def decompress_file(
     src_file_path: str, tgt_dir: Optional[str] = None, compression: Optional[str] = None
 ) -> None:
+    """
+    Decompresses a file
+    Args:
+        src_file_path: source file to decompress
+        tgt_dir: target directory to decompress
+        compression: compression type (zip or tar.gz)
+    """
     if tgt_dir is None:
         tgt_dir = os.path.dirname(src_file_path)
-
     if compression is None:
         compression = "zip"
 
@@ -56,6 +70,13 @@ def decompress_file(
 def delete_dir_with_name(
     root_dir: str, dir_name: str, logger: Optional[logging.Logger] = None
 ) -> None:
+    """
+    Deletes a directory with a given name
+    Args:
+        root_dir: root directory to delete from
+        dir_name: directory name to delete
+        logger: logger to log messages
+    """
     for root, dirs, _ in os.walk(root_dir, topdown=False):
         for name in dirs:
             if name == dir_name:
@@ -66,6 +87,12 @@ def delete_dir_with_name(
 
 
 def log_or_print(msg: str, logger: Optional[logging.Logger] = None) -> None:
+    """
+    Logs a message or prints it depending on the logger
+    Args:
+        msg: message to log or print
+        logger: logger to log messages
+    """
     if logger:
         logger.info(msg)
     else:

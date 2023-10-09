@@ -5,6 +5,14 @@ from typing import AnyStr, List
 
 
 def read_file(path_parts: List[str], encoding: str = "utf-8") -> AnyStr:
+    """
+    Read a file from the project directory
+    Args:
+        path_parts: List of parts of the path to the file
+        encoding: Encoding of the file
+    Returns:
+        Content of the file as a string
+    """
     with open(
         os.path.join(os.path.dirname(__file__), *path_parts), "r", encoding=encoding
     ) as file:

@@ -6,7 +6,7 @@ import sagemaker
 import torch
 from PIL import Image
 from sagemaker.huggingface.estimator import HuggingFaceModel
-from .model import BaseModel
+from .model import BaseModel, SdDreamboothLoraModel, SdxlDreamboothLoraModel
 from .utils.aws_helpers import create_role_if_not_exists
 from .utils.image_helpers import decode_base64_image
 from .utils.misc import log_or_print
@@ -18,6 +18,13 @@ TRANSFORMER_VERSION: Final = "4.28.1"
 
 
 class BasePredictor(metaclass=ABCMeta):
+    """
+    An abstract class to represent the predictor
+    Args:
+        model: The base model instance to use for prediction
+        logger: The logger to use for logging messages
+    """
+
     def __init__(self, model: BaseModel, logger: Optional[logging.Logger]) -> None:
         self.model = model
         self.logger = logger
@@ -33,23 +40,49 @@ class BasePredictor(metaclass=ABCMeta):
         negative_prompt: Optional[str],
         num_images_per_prompt: int,
         seed: Optional[int],
+        high_noise_frac: Optional[float],
+        cross_attention_scale: Optional[float],
     ) -> List[Image.Image]:
         """
-        TODO
+        Generate images given a prompt
+        Args:
+            prompt: The prompt to use for generating images
+            height: The height of the generated images
+            width: The width of the generated images
+            num_inference_steps: The number of inference steps to use for generating images
+            guidance_scale: The guidance scale to use for generating images
+            negative_prompt: The negative prompt to use for generating images
+            num_images_per_prompt: The number of images to generate per prompt
+            seed: The seed to use for generating random numbers
+            high_noise_frac: The fraction of the noise to use for denoising
+            cross_attention_scale: The scale to use for cross-attention
+        Returns:
+            A list of PIL images representing the generated images
         """
 
     def validate_prompt(self, prompt: str) -> bool:
-        return (
-            hasattr(self.model, "subject_name")
-            and hasattr(self.model, "class_name")
-            and not (
-                self.model.subject_name in prompt.lower()
-                and self.model.class_name in prompt.lower()
-            )
+        """
+        Validate the prompt
+        Args:
+            prompt: The prompt to validate
+        Returns:
+            Whether the prompt is valid or not
+        """
+        return not (
+            self.model.subject_name in prompt.lower()
+            and self.model.class_name in prompt.lower()
         )
 
 
 class LocalPredictor(BasePredictor):
+    """
+    A class to represent the local predictor
+    Args:
+        model: The base model instance to use for inference
+        output_dir: The output directory
+        logger: The logger to use for logging messages
+    """
+
     def __init__(
         self, model: BaseModel, output_dir: str, logger: Optional[logging.Logger] = None
     ):
@@ -74,8 +107,24 @@ class LocalPredictor(BasePredictor):
         num_images_per_prompt: int = 4,
         seed: Optional[int] = None,
         high_noise_frac: float = 0.7,
-        cross_attention_scale: float = 0.5,
+        cross_attention_scale: float = 1.0,
     ) -> List[Image.Image]:
+        """
+        Generate images given a prompt
+        Args:
+            prompt: The prompt to use for generating images
+            height: The height of the generated images
+            width: The width of the generated images
+            num_inference_steps: The number of inference steps to use for generating images
+            guidance_scale: The guidance scale to use for generating images
+            negative_prompt: The negative prompt to use for generating images
+            num_images_per_prompt: The number of images to generate per prompt
+            seed: seed: The seed to use for generating random numbers
+            high_noise_frac: The fraction of the noise to use for denoising
+            cross_attention_scale: The scale to use for cross-attention
+        Returns:
+            A list of PIL images representing the generated images
+        """
         if self.validate_prompt(prompt):
             log_or_print(
                 "Warning: the subject and class names are not included in the prompt.",
@@ -87,6 +136,11 @@ class LocalPredictor(BasePredictor):
             if seed is None
             else torch.Generator(device=self.model.device).manual_seed(seed)
         )
+
+        if isinstance(self.model, (SdDreamboothLoraModel, SdxlDreamboothLoraModel)):
+            kwargs = {"cross_attention_kwargs": {"scale": cross_attention_scale}}
+        else:
+            kwargs = {}
 
         if self.refiner:
             image = self.pipeline(
@@ -100,7 +154,7 @@ class LocalPredictor(BasePredictor):
                 denoising_end=high_noise_frac,
                 generator=generator,
                 output_type="latent",
-                cross_attention_kwargs={"scale": cross_attention_scale},
+                **kwargs,
             )["images"]
             generated_images = self.refiner(
                 prompt=prompt,
@@ -119,12 +173,25 @@ class LocalPredictor(BasePredictor):
                 negative_prompt=negative_prompt,
                 num_images_per_prompt=num_images_per_prompt,
                 generator=generator,
+                **kwargs,
             )["images"]
 
         return generated_images
 
 
 class AWSPredictor(BasePredictor):
+    """
+    A class to represent the AWS predictor
+    Args:
+        model: The base model instance to use for inference
+        s3_model_uri: The S3 URI of the model
+        boto_session: The boto session to use for AWS interactions
+        iam_role_name: The name of the IAM role to use
+        sm_infer_instance_type: The SageMaker instance type to use for inference
+        sm_endpoint_name: The name of the SageMaker endpoint to use for inference
+        logger: The logger to use for logging messages
+    """
+
     def __init__(
         self,
         model: BaseModel,
@@ -155,9 +222,10 @@ class AWSPredictor(BasePredictor):
             "py-dreambooth" if sm_endpoint_name is None else sm_endpoint_name
         )
 
-        env = {}
-        if model.scheduler_type:
-            env.update({"SCHEDULER_TYPE": model.scheduler_type})
+        env = {
+            "PRETRAINED_MODEL_NAME_OR_PATH": model.pretrained_model_name_or_path,
+            "SCHEDULER_TYPE": model.scheduler_type,
+        }
         if hasattr(model, "use_ft_vae") and model.use_ft_vae:
             env.update({"USE_FT_VAE": "True"})
         if (
@@ -213,6 +281,22 @@ class AWSPredictor(BasePredictor):
         high_noise_frac: float = 0.7,
         cross_attention_scale: float = 1.0,
     ) -> List[Image.Image]:
+        """
+        Generate images given a prompt
+        Args:
+            prompt: The prompt to use for generating images
+            height: The height of the generated images
+            width: The width of the generated images
+            num_inference_steps: The number of inference steps to use for generating images
+            guidance_scale: The guidance scale to use for generating images
+            negative_prompt: The negative prompt to use for generating images
+            num_images_per_prompt: The number of images to generate per prompt
+            seed: seed: The seed to use for generating random numbers
+            high_noise_frac: The fraction of the noise to use for denoising
+            cross_attention_scale: The scale to use for cross-attention
+        Returns:
+            A list of PIL images representing the generated images
+        """
         if self.validate_prompt(prompt):
             log_or_print(
                 "Warning: the subject and class names are not included in the prompt.",

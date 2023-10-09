@@ -1,19 +1,28 @@
 import ast
 import base64
 import os
+from enum import Enum
 from io import BytesIO
-from typing import Any, Dict, Final, List
+from typing import Any, Dict, List
 import torch
 from diffusers import DDIMScheduler, DiffusionPipeline, EulerDiscreteScheduler
 
 
-class HfModel:
-    SDXL_V1_0: Final = "stabilityai/stable-diffusion-xl-base-1.0"
-    SDXL_REFINER_V1_0: Final = "stabilityai/stable-diffusion-xl-refiner-1.0"
+class HfModel(str, Enum):
+    """
+    A class that holds the HuggingFace Hub model IDs
+    """
+
+    SDXL_V1_0 = "stabilityai/stable-diffusion-xl-base-1.0"
+    SDXL_REFINER_V1_0 = "stabilityai/stable-diffusion-xl-refiner-1.0"
 
 
-class SchedulerConfig:
-    DDIM: Final = {
+class SchedulerConfig(Dict, Enum):
+    """
+    A class that holds scheduler configuration values for inference
+    """
+
+    DDIM = {
         "beta_start": 0.00085,
         "beta_end": 0.012,
         "beta_schedule": "scaled_linear",
@@ -21,7 +30,7 @@ class SchedulerConfig:
         "set_alpha_to_one": True,
         "steps_offset": 1,
     }
-    EULER_DISCRETE: Final = {
+    EULER_DISCRETE = {
         "beta_start": 0.00085,
         "beta_end": 0.012,
         "beta_schedule": "scaled_linear",
@@ -31,21 +40,32 @@ class SchedulerConfig:
 
 
 def model_fn(model_dir: str) -> Dict[str, Any]:
+    """
+    A function for SageMaker endpoint that loads the model from the model directory
+    Args:
+        model_dir: The directory where the model is stored
+    Returns:
+        The dictionary of model component names and their instances
+    """
+
     scheduler_type = os.getenv("SCHEDULER_TYPE", "DDIM")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if scheduler_type.upper() == "DDIM":
-        scheduler = DDIMScheduler(**SchedulerConfig.DDIM)
+        scheduler = DDIMScheduler(**SchedulerConfig.DDIM.value)
     elif scheduler_type.upper() == "EULERDISCRETE":
         scheduler = EulerDiscreteScheduler(
-            **SchedulerConfig.EULER_DISCRETE,
+            **SchedulerConfig.EULER_DISCRETE.value,
         )
     else:
         scheduler = None
         ValueError("The 'scheduler_type' must be one of 'DDIM' or 'EulerDiscrete'.")
 
+    pretrained_model_name_or_path = os.environ.get(
+        "PRETRAINED_MODEL_NAME_OR_PATH", HfModel.SDXL_V1_0.value
+    )
     pipeline = DiffusionPipeline.from_pretrained(
-        HfModel.SDXL_V1_0,
+        pretrained_model_name_or_path,
         scheduler=scheduler,
         revision="fp16",
         torch_dtype=torch.float16,
@@ -54,7 +74,7 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
 
     if ast.literal_eval(os.environ.get("USE_REFINER", "False")):
         refiner = DiffusionPipeline.from_pretrained(
-            HfModel.SDXL_REFINER_V1_0,
+            HfModel.SDXL_REFINER_V1_0.value,
             text_encoder_2=pipeline.text_encoder_2,
             vae=pipeline.vae,
             torch_dtype=torch.float16,
@@ -69,6 +89,14 @@ def model_fn(model_dir: str) -> Dict[str, Any]:
 def predict_fn(
     data: Dict[str, Any], model_components: Dict[str, Any]
 ) -> Dict[str, List[str]]:
+    """
+    A function for SageMaker endpoint to generate images
+    Args:
+        data: The input data
+        model_components: The model components
+    Returns:
+        The dictionary of generated images in base64 encoding format
+    """
     prompt = data.pop("prompt", "")
     height = data.pop("height", 512)
     width = data.pop("width", 512)
@@ -78,7 +106,7 @@ def predict_fn(
     num_images_per_prompt = data.pop("num_images_per_prompt", 4)
     seed = data.pop("seed", 42)
     high_noise_frac = data.pop("high_noise_frac", 0.7)
-    cross_attention_scale = data.pop("cross_attention_scale", 0.5)
+    cross_attention_scale = data.pop("cross_attention_scale", 1.0)
 
     pipeline, refiner = model_components["model"], model_components["refiner"]
 

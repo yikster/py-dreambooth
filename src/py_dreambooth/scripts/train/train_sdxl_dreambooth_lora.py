@@ -1,4 +1,5 @@
 # https://github.com/huggingface/diffusers/blob/main/examples/dreambooth/train_dreambooth_lora_sdxl.py
+
 #!/usr/bin/env python
 # coding=utf-8
 # Copyright 2023 The HuggingFace Inc. team. All rights reserved.
@@ -86,6 +87,13 @@ logger = get_logger(__name__)
 
 # The functions below are newly added
 def arg_as_bool(value: Any) -> bool:
+    """
+    Converts an argument to boolean
+    Args:
+        value: value to convert
+    Returns:
+        boolean value of the argument
+    """
     if isinstance(value, bool):
         return value
     if value.lower() in ("yes", "true", "t", "y", "1"):
@@ -101,6 +109,14 @@ def compress_dir_to_model_tar_gz(
     tgt_filename: Optional[str] = None,
     logger: Optional[logging.Logger] = None,
 ) -> None:
+    """
+    Compresses a directory to a tar.gz file
+    Args:
+        src_dir: source directory to compress
+        tgt_dir: target directory to compress
+        tgt_filename: target filename to compress
+        logger: logger to log messages
+    """
     if tgt_dir is None:
         tgt_dir = src_dir
 
@@ -129,6 +145,13 @@ def delete_expt_model_tar_gz(
     excl_filenames: Optional[Union[str, List[str]]] = None,
     logger: Optional[logging.Logger] = None,
 ) -> None:
+    """
+    Deletes a directory except for the specified files
+    Args:
+        tgt_dir: target directory to delete
+        excl_filenames: list of filenames to exclude
+        logger: logger to log messages
+    """
     if excl_filenames is None:
         excl_filenames = []
     elif isinstance(excl_filenames, str):
@@ -149,6 +172,12 @@ def delete_expt_model_tar_gz(
 
 
 def log_or_print(msg: str, logger: Optional[logging.Logger] = None) -> None:
+    """
+    Logs a message or prints it depending on the logger
+    Args:
+        msg: message to log or print
+        logger: logger to log messages
+    """
     if logger:
         logger.info(msg)
     else:
