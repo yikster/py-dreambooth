@@ -481,7 +481,7 @@ class SdDreamboothLoraModel(BaseModel):
         compress_output: bool = False,
     ):
         if pretrained_model_name_or_path is None:
-            pretrained_model_name_or_path = HfModel.SDXL_V1_0.value
+            pretrained_model_name_or_path = HfModel.SD_V2_1.value
 
         super().__init__(
             pretrained_model_name_or_path,
@@ -502,7 +502,6 @@ class SdDreamboothLoraModel(BaseModel):
             compress_output,
         )
 
-        self.pretrained_vae_model_name_or_path = HfModel.SDXL_VAE.value
         self.subject_name = subject_name
         self.class_name = class_name
         self.with_prior_preservation = with_prior_preservation
@@ -585,8 +584,6 @@ class SdDreamboothLoraModel(BaseModel):
         arguments = [
             "--pretrained_model_name_or_path",
             self.pretrained_model_name_or_path,
-            "--pretrained_vae_model_name_or_path",
-            self.pretrained_vae_model_name_or_path,
             "--instance_data_dir",
             self.data_dir,
             "--instance_prompt",
@@ -702,7 +699,7 @@ class SdxlDreamboothLoraModel(BaseModel):
         train_batch_size: int = 1,
         num_train_epochs: int = 1,
         max_train_steps: Optional[int] = 1000,
-        learning_rate: float = 1e-5,
+        learning_rate: float = 1e-4,
         validation_prompt: Optional[str] = None,
         reduce_gpu_memory_usage: bool = True,
         scheduler_type: Optional[str] = None,
@@ -772,8 +769,13 @@ class SdxlDreamboothLoraModel(BaseModel):
             scheduler = None
             ValueError("The 'scheduler_type' must be one of 'DDIM' or 'EulerDiscrete'.")
 
+        vae = AutoencoderKL.from_pretrained(
+            HfModel.SD_VAE.value,
+            torch_dtype=torch.float16,
+        )
         pipeline = DiffusionPipeline.from_pretrained(
             self.pretrained_model_name_or_path,
+            vae=vae,
             scheduler=scheduler,
             variant="fp16",
             torch_dtype=torch.float16,
@@ -838,6 +840,8 @@ class SdxlDreamboothLoraModel(BaseModel):
             0,
             "--validation_prompt",
             f"'{self.validation_prompt}'",
+            "--num_validation_images",
+            2,
             "--compress_output",
             self.compress_output,
         ]
