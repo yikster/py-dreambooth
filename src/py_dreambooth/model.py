@@ -245,7 +245,7 @@ class SdDreamboothModel(BaseModel):
         train_text_encoder: bool = True,
         train_batch_size: int = 1,
         num_train_epochs: int = 1,
-        max_train_steps: Optional[int] = 1000,
+        max_train_steps: Optional[int] = None,
         learning_rate: float = 2e-06,
         validation_prompt: Optional[str] = None,
         reduce_gpu_memory_usage: bool = True,
@@ -308,10 +308,10 @@ class SdDreamboothModel(BaseModel):
             The dictionary of model component names and their instances
         """
         if self.scheduler_type.upper() == "DDIM":
-            scheduler = DDIMScheduler(**SchedulerConfig.DDIM)
+            scheduler = DDIMScheduler(**SchedulerConfig.DDIM.value)
         elif self.scheduler_type.upper() == "EULERDISCRETE":
             scheduler = EulerDiscreteScheduler(
-                **SchedulerConfig.EULER_DISCRETE,
+                **SchedulerConfig.EULER_DISCRETE.value,
             )
         else:
             scheduler = None
@@ -471,8 +471,8 @@ class SdDreamboothLoraModel(BaseModel):
         train_text_encoder: bool = True,
         train_batch_size: int = 1,
         num_train_epochs: int = 1,
-        max_train_steps: Optional[int] = 1000,
-        learning_rate: float = 1e-5,
+        max_train_steps: Optional[int] = None,
+        learning_rate: float = 1e-4,
         validation_prompt: Optional[str] = None,
         reduce_gpu_memory_usage: bool = True,
         scheduler_type: Optional[str] = None,
@@ -536,10 +536,10 @@ class SdDreamboothLoraModel(BaseModel):
             The dictionary of model component names and their instances
         """
         if self.scheduler_type.upper() == "DDIM":
-            scheduler = DDIMScheduler(**SchedulerConfig.DDIM)
+            scheduler = DDIMScheduler(**SchedulerConfig.DDIM.value)
         elif self.scheduler_type.upper() == "EULERDISCRETE":
             scheduler = EulerDiscreteScheduler(
-                **SchedulerConfig.EULER_DISCRETE,
+                **SchedulerConfig.EULER_DISCRETE.value,
             )
         else:
             scheduler = None
@@ -698,7 +698,7 @@ class SdxlDreamboothLoraModel(BaseModel):
         train_text_encoder: bool = True,
         train_batch_size: int = 1,
         num_train_epochs: int = 1,
-        max_train_steps: Optional[int] = 1000,
+        max_train_steps: Optional[int] = None,
         learning_rate: float = 1e-4,
         validation_prompt: Optional[str] = None,
         reduce_gpu_memory_usage: bool = True,
@@ -760,17 +760,17 @@ class SdxlDreamboothLoraModel(BaseModel):
             The dictionary of model component names and their instances
         """
         if self.scheduler_type.upper() == "DDIM":
-            scheduler = DDIMScheduler(**SchedulerConfig.DDIM)
+            scheduler = DDIMScheduler(**SchedulerConfig.DDIM.value)
         elif self.scheduler_type.upper() == "EULERDISCRETE":
             scheduler = EulerDiscreteScheduler(
-                **SchedulerConfig.EULER_DISCRETE,
+                **SchedulerConfig.EULER_DISCRETE.value,
             )
         else:
             scheduler = None
             ValueError("The 'scheduler_type' must be one of 'DDIM' or 'EulerDiscrete'.")
 
         vae = AutoencoderKL.from_pretrained(
-            HfModel.SD_VAE.value,
+            HfModel.SDXL_VAE.value,
             torch_dtype=torch.float16,
         )
         pipeline = DiffusionPipeline.from_pretrained(

@@ -45,6 +45,9 @@ class LocalDataset:
 
         os.makedirs(self.raw_data_dir, exist_ok=True)
 
+    def __len__(self) -> int:
+        return len(get_image_paths(self.preproc_data_dir))
+
     def download_examples(self, repo_id: Optional[str] = None) -> "LocalDataset":
         """
         Download a dataset from the HuggingFace Hub to the local directory
@@ -116,7 +119,7 @@ class LocalDataset:
                 log_or_print(str(error), self.logger)
                 continue
 
-        num_preproc_images = len(get_image_paths(self.preproc_data_dir))
+        num_preproc_images = len(self)
         if num_preproc_images == 0:
             raise RuntimeError("There are no preprocessed images.")
 

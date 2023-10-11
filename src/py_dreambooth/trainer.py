@@ -9,7 +9,7 @@ from sagemaker.huggingface import HuggingFaceProcessor
 from sagemaker.processing import ProcessingInput, ProcessingOutput
 from sagemaker.utils import unique_name_from_base
 from .dataset import AWSDataset, LocalDataset
-from .model import BaseModel
+from .model import BaseModel, SdDreamboothLoraModel, SdxlDreamboothLoraModel
 from .predictor import AWSPredictor, BasePredictor, LocalPredictor
 from .utils.aws_helpers import create_role_if_not_exists, make_s3_uri
 from .utils.misc import decompress_file, log_or_print
@@ -18,6 +18,10 @@ DEFAULT_INSTANCE_TYPE: Final = "ml.g4dn.xlarge"
 
 PYTORCH_VERSION: Final = "2.0.0"
 TRANSFORMER_VERSION: Final = "4.28.1"
+
+STEP_MULTIPLIER: Final = 100
+MIN_STEPS: Final = 200
+MAX_STEPS: Final = 2000
 
 BASE_DIR: Final = "/opt/ml/processing"
 
@@ -89,14 +93,22 @@ class LocalTrainer(BaseTrainer):
         Returns:
             The local predictor instance of the fitted model
         """
-        model = model.set_members(
-            **{
-                "data_dir": dataset.preproc_data_dir,
-                "output_dir": self.output_dir,
-                "report_to": self.report_to,
-                "compress_output": "False",
-            }
-        )
+        kwargs = {
+            "data_dir": dataset.preproc_data_dir,
+            "output_dir": self.output_dir,
+            "report_to": self.report_to,
+            "compress_output": "False",
+        }
+
+        if model.max_train_steps is None:
+            if isinstance(model, (SdDreamboothLoraModel, SdxlDreamboothLoraModel)):
+                max_train_steps = round(STEP_MULTIPLIER * len(dataset))
+            else:
+                max_train_steps = round(0.5 * STEP_MULTIPLIER * len(dataset))
+
+            kwargs["max_train_steps"] = max(min(max_train_steps, MAX_STEPS), MIN_STEPS)
+
+        model = model.set_members(**kwargs)
 
         if self.wandb_api_key:
             os.environ["WANDB_API_KEY"] = self.wandb_api_key
@@ -192,14 +204,22 @@ class AWSTrainer(BaseTrainer):
 
         dataset_uri = make_s3_uri(dataset.bucket_name, dataset.dataset_prefix)
 
-        model = model.set_members(
-            **{
-                "data_dir": f"{BASE_DIR}/dataset",
-                "output_dir": f"{BASE_DIR}/model",
-                "report_to": self.report_to,
-                "compress_output": "True",
-            }
-        )
+        kwargs = {
+            "data_dir": dataset.preproc_data_dir,
+            "output_dir": self.output_dir,
+            "report_to": self.report_to,
+            "compress_output": "False",
+        }
+
+        if model.max_train_steps is None:
+            if isinstance(model, (SdDreamboothLoraModel, SdxlDreamboothLoraModel)):
+                max_train_steps = round(len(dataset) * STEP_MULTIPLIER)
+            else:
+                max_train_steps = round(0.5 * len(dataset) * STEP_MULTIPLIER)
+
+            kwargs["max_train_steps"] = max_train_steps
+
+        model = model.set_members(**kwargs)
         arguments = model.get_arguments()
         command = [
             "accelerate",
