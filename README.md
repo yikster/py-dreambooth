@@ -2,7 +2,7 @@
 - - -
 ![Samples](assets/asset-002.png)
 **Py-Dreambooth** is a Python package that makes it easy to create AI avatar images from photos of you, your family, friends, or pets!
-1. This is set to the most efficient default values, so it's easy to get it working. This also provides a number of helper functions.
+1. Tasks are pre-configured with the most efficient defaults, which greatly streamlines the workload. A number of helper functions are also provided.
 2. This is designed to be modular and extensible to many different models. Currently supported models are the *Stable Diffusion Dreambooth*, *Stable Diffusion Dreambooth LoRA*, and *Stable Diffusion XL Dreambooth LoRA*.
 3. This is designed to give you the flexibility to choose local or cloud resources to train your model and generate images.
 
