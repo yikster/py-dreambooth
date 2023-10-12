@@ -9,7 +9,7 @@
 ## ⚙️ How to Install
 - - -
 ```shell
-pip install py_dreambooth
+pip install py-dreambooth
 ```
 
  ## 🚀 Quick Start
