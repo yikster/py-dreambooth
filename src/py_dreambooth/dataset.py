@@ -9,6 +9,7 @@ from tqdm import tqdm
 from .utils.aws_helpers import (
     create_bucket_if_not_exists,
     delete_files_in_s3,
+    make_s3_uri,
     upload_dir_to_s3,
 )
 from .utils.image_helpers import (
@@ -162,6 +163,16 @@ class AWSDataset(LocalDataset):
             )
             if s3_bucket_name is None
             else s3_bucket_name
+        )
+
+    def get_s3_model_uri(self) -> str:
+        """
+        Get the S3 URI for the model artifact
+        Returns:
+            The S3 URI
+        """
+        return make_s3_uri(
+            self.bucket_name, f"{self.project_name}/model", "model.tar.gz"
         )
 
     def upload_images(self) -> "AWSDataset":

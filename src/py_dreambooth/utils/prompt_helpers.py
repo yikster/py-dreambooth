@@ -12,15 +12,15 @@ def make_prompt(subject_name: str, class_name: str) -> str:
     """
     prompt_list = [
         "A hyper-realistic and stunning depiction of {subject_name} {class_name}, capturing the {class_name}'s charisma and charm, trending on Behance, intricate textures, vivid color palette, reminiscent of Alex Ross and Norman Rockwell",
-        "A portrait of {subject_name} {class_name}, pen and ink, intricate line drawings, by Craig Mullins, Ruan Jia, Kentaro Miura, Greg Rutkowski, Loundraw",
-        "A drawing of {subject_name} {class_name}, in the style of mark lague, hyper-realistic portraits, Sam Spratt, Brent Heighton, captivating gaze, cyclorama, crisp and clean --ar 69:128 --s 750 --v 5. 2",
+        "A drawing of {subject_name} {class_name}, in the style of Mark Lague, hyper-realistic portraits, Sam Spratt, Brent Heighton, captivating gaze, Cyclorama, crisp and clean --ar 69:128 --s 750 --v 5. 2",
         "A digital painting of {subject_name} {class_name}, a digital painting, magenta and gray, high contrast illustration, Ryan Hewett, Otto Schmidt",
-        "A ultradetailed painting of a {subject_name} {class_name} by Conrad Roset, Greg Rutkowski, trending on Artstation",
-        "Closeup of {subject_name} {class_name} posing in front of a solid dark wall, side profile, uhd, Kodak ektochrome, lifelike and stunning, cinematic light, volumetric light, Rembrandt lighting",
-        "A professional photograph of of {subject_name} {class_name}, portrait photography, with detailed skin textures, shallow depth of field, Otus 85mm f/1. 4 ZF. 2 Lens, ISO 200, f/4, 1/250s, 8k --ar 2:3 --no blur, distortion, mutation, 3d, 2d, illustration",
-        "A {subject_name} {class_name} with refined features and a sophisticated demeanor poses against a timeless backdrop. The 4K resolution highlights every aspect of the {class_name}'s elegance and charm, elegance-themed photography by Eleanor Eleganza, 2023, 4K camera, soft studio lighting",
+        "Closeup of {subject_name} {class_name} posing in front of a solid dark wall, side profile, uhd, Kodak Ektochrome, lifelike and stunning, cinematic light, volumetric light, Rembrandt lighting",
+        "A professional photograph of {subject_name} {class_name}, portrait photography, with detailed skin textures, shallow depth of field, Otus 85mm f/1. 4 ZF. 2 Lens, ISO 200, f/4, 1/250s, 8k --ar 2:3 --no blur, distortion, mutation, 3d, 2d, illustration",
         "Masterpiece, (beautiful and aesthetic:1. 5), surrealism, highly detailed, a portrait painting of {subject_name} {class_name}, hard brush, minimalist low poly collage illustration, splatter oil paintings effect, city portraits, heavy inking",
-        "A drawing of a {subject_name} {class_name}, black and white, hints of oil painting style, hints of watercolor style, brush strokes, negative white space, crisp, sharp, textured collage, layered fibers, post-impressionist, hyper-realism",
+        "A drawing of {subject_name} {class_name}, black and white, hints of oil painting style, hints of watercolor style, brush strokes, negative white space, crisp, sharp, textured collage, layered fibers, post-impressionist, hyper-realism",
+        "Portrait of {subject_name} {class_name}, dramatic lighting, illustration by Greg Rutkowski, Yoji Shinkawa, 4k, digital art, concept art, trending on Artstation",
+        "Portrait of {subject_name} {class_name}, pen and ink, intricate line drawings, by Craig Mullins, Ruan Jia, Kentaro Miura, Greg Rutkowski, Loundraw ",
+        "A ultra-detailed panting of {subject_name} {class_name}, by Conrad Roset, Greg Rutkowski and Makoto Shinkai, trending on Artstation",
     ]
     random.shuffle(prompt_list)
     for prompt in list(
