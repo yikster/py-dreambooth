@@ -841,7 +841,7 @@ class SdxlDreamboothLoraModel(BaseModel):
             "--validation_prompt",
             f"'{self.validation_prompt}'",
             "--num_validation_images",
-            1,
+            4,
             "--compress_output",
             self.compress_output,
         ]
