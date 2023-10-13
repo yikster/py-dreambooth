@@ -620,6 +620,12 @@ def parse_args(input_args=None):
         type=arg_as_bool,
         help="Compress the output directory with tar.gz",
     )
+    parser.add_argument(
+        "--run_final_inference",
+        default=False,
+        type=arg_as_bool,
+        help="Run final inference after model training",
+    )
 
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -1687,70 +1693,75 @@ def main(args):
 
         # Final inference
         # Load previous pipeline
-        vae = AutoencoderKL.from_pretrained(
-            vae_path,
-            subfolder="vae" if args.pretrained_vae_model_name_or_path is None else None,
-            revision=args.revision,
-            torch_dtype=weight_dtype,
-        )
-        pipeline = StableDiffusionXLPipeline.from_pretrained(
-            args.pretrained_model_name_or_path,
-            vae=vae,
-            revision=args.revision,
-            torch_dtype=weight_dtype,
-        )
-
-        # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
-        scheduler_args = {}
-
-        if "variance_type" in pipeline.scheduler.config:
-            variance_type = pipeline.scheduler.config.variance_type
-
-            if variance_type in ["learned", "learned_range"]:
-                variance_type = "fixed_small"
-
-            scheduler_args["variance_type"] = variance_type
-
-        pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
-            pipeline.scheduler.config, **scheduler_args
-        )
-
-        # load attention processors
-        pipeline.load_lora_weights(args.output_dir)
-
-        # run inference
-        images = []
-        if args.validation_prompt and args.num_validation_images > 0:
-            pipeline = pipeline.to(accelerator.device)
-            generator = (
-                torch.Generator(device=accelerator.device).manual_seed(args.seed)
-                if args.seed
-                else None
+        if args.run_final_inference:  # newly added
+            vae = AutoencoderKL.from_pretrained(
+                vae_path,
+                subfolder="vae"
+                if args.pretrained_vae_model_name_or_path is None
+                else None,
+                revision=args.revision,
+                torch_dtype=weight_dtype,
             )
-            images = [
-                pipeline(
-                    args.validation_prompt, num_inference_steps=25, generator=generator
-                ).images[0]
-                for _ in range(args.num_validation_images)
-            ]
+            pipeline = StableDiffusionXLPipeline.from_pretrained(
+                args.pretrained_model_name_or_path,
+                vae=vae,
+                revision=args.revision,
+                torch_dtype=weight_dtype,
+            )
 
-            for tracker in accelerator.trackers:
-                if tracker.name == "tensorboard":
-                    np_images = np.stack([np.asarray(img) for img in images])
-                    tracker.writer.add_images(
-                        "test", np_images, epoch, dataformats="NHWC"
-                    )
-                if tracker.name == "wandb":
-                    tracker.log(
-                        {
-                            "test": [
-                                wandb.Image(
-                                    image, caption=f"{i}: {args.validation_prompt}"
-                                )
-                                for i, image in enumerate(images)
-                            ]
-                        }
-                    )
+            # We train on the simplified learning objective. If we were previously predicting a variance, we need the scheduler to ignore it
+            scheduler_args = {}
+
+            if "variance_type" in pipeline.scheduler.config:
+                variance_type = pipeline.scheduler.config.variance_type
+
+                if variance_type in ["learned", "learned_range"]:
+                    variance_type = "fixed_small"
+
+                scheduler_args["variance_type"] = variance_type
+
+            pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
+                pipeline.scheduler.config, **scheduler_args
+            )
+
+            # load attention processors
+            pipeline.load_lora_weights(args.output_dir)
+
+            # run inference
+            images = []
+            if args.validation_prompt and args.num_validation_images > 0:
+                pipeline = pipeline.to(accelerator.device)
+                generator = (
+                    torch.Generator(device=accelerator.device).manual_seed(args.seed)
+                    if args.seed
+                    else None
+                )
+                images = [
+                    pipeline(
+                        args.validation_prompt,
+                        num_inference_steps=25,
+                        generator=generator,
+                    ).images[0]
+                    for _ in range(args.num_validation_images)
+                ]
+
+                for tracker in accelerator.trackers:
+                    if tracker.name == "tensorboard":
+                        np_images = np.stack([np.asarray(img) for img in images])
+                        tracker.writer.add_images(
+                            "test", np_images, epoch, dataformats="NHWC"
+                        )
+                    if tracker.name == "wandb":
+                        tracker.log(
+                            {
+                                "test": [
+                                    wandb.Image(
+                                        image, caption=f"{i}: {args.validation_prompt}"
+                                    )
+                                    for i, image in enumerate(images)
+                                ]
+                            }
+                        )
 
         if args.push_to_hub:
             save_model_card(

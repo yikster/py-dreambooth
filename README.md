@@ -15,7 +15,7 @@ pip install py-dreambooth
  ## 🚀 Quick Start
 - - -
 * Prepare about 10-20 high-quality solo selfie photos (jpg or png) and put them in a specific directory.
-* Please run on a machine with a GPU of 16GB or more.
+* Please run on a machine with a GPU of 16GB or more. (If you're fine-tuning *SDXL*, you'll need 24GB of VRAM.)
 ```python
 from py_dreambooth.dataset import LocalDataset
 from py_dreambooth.model import SdDreamboothModel
@@ -49,8 +49,9 @@ display_images(images, fig_size=10)
 
 ## 🏃‍♀️ Tutorials  
 - - -
-* Take a look at the [01-local-tutorial.ipynb](ipynb/01-local-tutorial.ipynb) file to learn how to get it running on your local *Jupyter Notebook* (including *SageMaker Studio Lab* or *Google Colab*).
-* If you're interested in running it with an AWS cloud resources, take a look at the [02-aws-tutorial.ipynb](ipynb/02-aws-tutorial.ipynb) file.
+* Take a look at the [01-local-tutorial.ipynb](ipynb/01-local-tutorial.ipynb) file to learn how to get it running on your local *Jupyter Notebook*.
+* If you're interested in running it with AWS cloud resources, take a look at the [02-aws-tutorial.ipynb](ipynb/02-aws-tutorial.ipynb) file.
+* Or, get started right away with the [*Google Colab Notebook*](https://colab.research.google.com/drive/1jIv8210dOFLWXAL8gP3SpMQcLHmSHlVS?usp=sharing) here!
 
 ## 📚 Documentation
 - - -
